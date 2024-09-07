@@ -599,45 +599,46 @@ function bp_search_is_search() {
 
 if ( in_array( 'geo-my-wp/geo-my-wp.php', apply_filters( 'active_plugins', (array) get_option( 'active_plugins', array() ) ), true ) ) {
 
-	function bps_get_request( $type, $form = 0 ) {
-		$current        = bps_current_page();
-		$hidden_filters = bps_get_hidden_filters();
-
-		$cookie  = apply_filters( 'bps_cookie_name', 'bps_request' );
-		$request = isset( $_REQUEST['bps_form'] ) ? $_REQUEST : array();
-		if ( empty( $request ) && isset( $_COOKIE[ $cookie ] ) ) {
-			parse_str( stripslashes( $_COOKIE[ $cookie ] ), $request );
+	if ( ! function_exists( 'bps_get_request' ) ) {
+		function bps_get_request( $type, $form = 0 ) {
+			$current        = bps_current_page();
+			$hidden_filters = bps_get_hidden_filters();
+	
+			$cookie  = apply_filters( 'bps_cookie_name', 'bps_request' );
+			$request = isset( $_REQUEST['bps_form'] ) ? $_REQUEST : array();
+			if ( empty( $request ) && isset( $_COOKIE[ $cookie ] ) ) {
+				parse_str( stripslashes( $_COOKIE[ $cookie ] ), $request );
+			}
+	
+			switch ( $type ) {
+				case 'form':
+					if ( isset( $request['bps_form'] ) && $request['bps_form'] != $form ) {
+						$request = array();
+					}
+					break;
+	
+				case 'filters':
+					if ( isset( $request['bps_directory'] ) && $request['bps_directory'] != $current ) {
+						$request = array();
+					}
+					foreach ( $hidden_filters as $key => $value ) {
+						unset( $request[ $key ] );
+					}
+					break;
+	
+				case 'search':
+					if ( isset( $request['bps_directory'] ) && $request['bps_directory'] != $current ) {
+						$request = array();
+					}
+					foreach ( $hidden_filters as $key => $value ) {
+						$request[ $key ] = $value;
+					}
+					break;
+			}
+	
+			return apply_filters( 'bps_request', $request, $type, $form );
 		}
-
-		switch ( $type ) {
-			case 'form':
-				if ( isset( $request['bps_form'] ) && $request['bps_form'] != $form ) {
-					$request = array();
-				}
-				break;
-
-			case 'filters':
-				if ( isset( $request['bps_directory'] ) && $request['bps_directory'] != $current ) {
-					$request = array();
-				}
-				foreach ( $hidden_filters as $key => $value ) {
-					unset( $request[ $key ] );
-				}
-				break;
-
-			case 'search':
-				if ( isset( $request['bps_directory'] ) && $request['bps_directory'] != $current ) {
-					$request = array();
-				}
-				foreach ( $hidden_filters as $key => $value ) {
-					$request[ $key ] = $value;
-				}
-				break;
-		}
-
-		return apply_filters( 'bps_request', $request, $type, $form );
 	}
-
 	function bps_current_page() {
 		$current = defined( 'DOING_AJAX' ) ? parse_url(
 			$_SERVER['HTTP_REFERER'],
